@@ -9,7 +9,8 @@ output: html_document
 library(knitr)
 library(DBI)
 library(RMySQL)
-mydb = dbConnect(MySQL(), user='root', password='r3dl4kml', dbname='assignment2', host='localhost')
+PASSWORD = ''
+mydb = dbConnect(MySQL(), user='root', password=PASSWORD, dbname='assignment2', host='localhost')
 query <-dbSendQuery(mydb,"SELECT * FROM movie_reviews ")
 df <- fetch(query)
 kable(df)
