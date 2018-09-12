@@ -1,0 +1,19 @@
+---
+title: "Anne_Schwenker_607_SQL_R_Assignment"
+author: "Anne Schwenker"
+date: "September 12, 2018"
+output: html_document
+---
+# Below are all rows of the movie review table created in sql
+```{r echo=FALSE, results='asis'}
+library(knitr)
+library(DBI)
+library(RMySQL)
+mydb = dbConnect(MySQL(), user='root', password='r3dl4kml', dbname='assignment2', host='localhost')
+query <-dbSendQuery(mydb,"SELECT * FROM movie_reviews ")
+df <- fetch(query)
+kable(df)
+
+```
+
+
