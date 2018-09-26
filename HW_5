@@ -1,0 +1,15 @@
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+MyData <- read.csv(file="H:/CLASS/CUNY_SPS_MS_DS/Fall18_607/delayed_flights.csv", header=TRUE, sep=",")
+
+MyData
+MyData=na.omit(MyData)
+names(MyData)[1]<-"Airline"
+names(MyData)[2]<-"Status"
+t(MyData)
+gather(MyData,"Alaska",c(1,2))
+MyData %>%
+  rownames_to_column %>% 
+  gather(var, value, -rowname) %>% 
+  spread(rowname, value) 
