@@ -1,0 +1,48 @@
+---
+title: "Assignment_5"
+output: html_document
+---
+
+Below is the source data for the arrival status for 2 airlines
+```{r echo=FALSE}
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+MyData <- read.csv(file="H:/CLASS/CUNY_SPS_MS_DS/Fall18_607/delayed_flights.csv", header=TRUE, sep=",")
+MyData
+```
+For the purpose of this assignment this data must be made tidy. data is defined by tidy if it adheres to the following :
+
+  Each variable forms a column.
+  
+  Each observation forms a row.
+  
+  Each type of observational unit forms a table.
+
+This sample does  not follow this form. In order to organize it properly a variable needs to be added for count and the cities that are currently headers need to be made into observations.Before I could organize it, I needed to add headers for the airline and flight status columns, and remove the blank observation in the middle
+
+```{r echo=FALSE}
+MyData=na.omit(MyData)
+names(MyData)[1]<-"Airline"
+names(MyData)[2]<-"Status"
+MyData
+```
+Then I used gather to restructure the variables and observations
+```{r echo=FALSE}
+restructured<-MyData %>%
+  gather(city,count,-Airline,-Status)
+restructured
+```
+Now the variable city is added and populated by what was previously headers. The count variable was added to represent the count of instances when a flight was on time or delayed for each city. Next I needed to fill in the blanks in the Airline column.These were actually filled with empty strings, in order to use the fill() function I needed to replace them with NA
+```{r echo=FALSE}
+restructured
+is.na(restructured)<- restructured==''
+restructured
+filled<-restructured %>% fill(Airline)
+filled
+```
+After that I grouped by airline and status to summarize the counts of flights into these categories
+```{r echo=FALSE}
+filled%>%group_by(Airline,Status)%>% summarise(B=sum(count))
+```
+
