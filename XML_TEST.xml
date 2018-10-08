@@ -4,6 +4,7 @@
   <genre>GENRE_TEST</genre>
   <year_published>1975</year_published>
 </book>
+
 <book>
   <title>TEST_2</title>
   <author>AUTHOR_TEST</author>
