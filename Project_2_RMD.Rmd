@@ -1,0 +1,60 @@
+Below is the source data for the arrival status for 2 airlines
+```{r echo=FALSE}
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+MyData <- read.csv(file="H:/CLASS/CUNY_SPS_MS_DS/Fall18_607/delayed_flights.csv", header=TRUE, sep=",")
+MyData
+```
+For the purpose of this assignment this data must be made tidy. data is defined by tidy if it adheres to the following :
+
+  Each variable forms a column.
+  
+  Each observation forms a row.
+  
+  Each type of observational unit forms a table.
+
+The three samples I chose were all from NYC Open data. 
+OCDV Family Justice Center Foreign Born Report
+https://data.cityofnewyork.us/Public-Safety/OCDV-Family-Justice-Center-Foreign-Born-Report/bray-s6dc
+
+2017 Intimate Partner Violence Related Snapshots: New York City Community Board Districts
+https://data.cityofnewyork.us/Public-Safety/2017-Intimate-Partner-Violence-Related-Snapshots-N/qiwj-eg47
+
+New York City Population by Borough, 1950 - 2040
+https://data.cityofnewyork.us/City-Government/New-York-City-Population-by-Borough-1950-2040/xywu-7bv9
+
+
+for OCDV Family Justice Center Foreign Born Report, it had counts for survey question respodents where is survey question was a separate variable.
+```{r echo=FALSE}
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+family_justice_foreign_Born <- read.csv(file="H:/CLASS/CUNY_SPS_MS_DS/Fall18_607/OCDV_Family_Justice_Center_Foreign_Born_Report.csv", header=TRUE, sep=",")
+family_justice_foreign_Born
+
+```
+I used gather to restructure this into a tidy format so that there was one variable for survey question, and one for count, with an observation for each survey question and year
+```{r echo=FALSE}
+
+restructured<-family_justice_foreign_Born %>%
+  gather(Intake_Question,response_count,-Visit_Year,)
+restructured_clean <-restructured[!(is.na(restructured$response_count) | restructured$response_count==""), ]
+restructured_clean
+```
+Then I summarized to find the number of respondants by year
+```{r echo=FALSE}
+restructured_clean%>%group_by(Visit_Year)%>% summarise(Total_Response_Count=sum(response_count))
+```
+For 2017 Intimate Partner Violence Related Snapshots: New York City Community Board Districts the data was structured to show for each community district the counts of incidences reported. Each incident was its own variable.It also had a totals row for one variable.
+```{r echo=FALSE}
+Intimate_Partner_Violence <- read.csv(file="H:/CLASS/CUNY_SPS_MS_DS/Fall18_607/2017_Intimate_Partner_Violence_Related_Snapshots__New_York_City_Community_Board_Districts.csv", header=TRUE, sep=",")
+Intimate_Partner_Violence
+
+```
+First I removed any row where the community district or borough column was na or blank to remove the totals row
+```{recho=FALSE}
+Intimate_Partner_Violence_clean <- Intimate_Partner_Violence[!(is.na(Intimate_Partner_Violence$Comm_Dist_.Boro) | Intimate_Partner_Violence$Comm_Dist_.Boro==""), ]
+Intimate_Partner_Violence_clean <-Intimate_Partner_Violence_clean[!(is.na(Intimate_Partner_Violence_clean$Comm_District) | Intimate_Partner_Violence_clean$Comm_District==""), ]
+```
+
