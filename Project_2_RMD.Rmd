@@ -107,7 +107,7 @@ separated
 ```
 
 Finally I subsetted to view only 1950, 1980 and 2000 to see the change
-```{r echo = false}
+```{r echo=FALSE}
 pop_1950<-subset(separated,year=="x1950"|year=="x1980"|year=="x2000",select=Borough:population)
 pop_1950
 ```
