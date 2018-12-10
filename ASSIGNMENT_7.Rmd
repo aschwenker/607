@@ -1,0 +1,29 @@
+```{r echo=FALSE, include=FALSE}
+
+library(XML)
+library(xml2)
+library(plyr)
+library(dplyr)
+library(rvest)
+library(jsonlite)
+```
+
+```{r echo=FALSE}
+url <-"https://raw.githubusercontent.com/aschwenker/607/master/Test_XML.xml"
+XML<-readLines(url)
+XML_DF <- ldply(xmlToList(XML), function(x) { data.frame(x) } )
+XML_DF
+```
+
+```{r echo=FALSE}
+HTML_LINK <- "https://raw.githubusercontent.com/aschwenker/607/master/books.HTML"
+HTML_DF <- as.data.frame(read_html(HTML_LINK) %>% html_table(fill=TRUE))
+HTML_DF
+```
+
+```{r echo=FALSE}
+JSON_LINK <-"https://raw.githubusercontent.com/aschwenker/607/master/books.json"
+JSON_DF<-fromJSON(JSON_LINK)
+JSON_DF
+```
+

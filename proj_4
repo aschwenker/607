@@ -1,0 +1,55 @@
+library(RODBC)
+library(dplyr)
+dbhandle<- odbcDriverConnect('driver={SQL Server};server=MTSQLPRDW;database=DOEGps_BI;trusted_connection=true')
+sqlTables(dbhandle)
+sqlColumns(dbhandle, "DOE_GPS_RPMData")
+query <- ("select distinct * from DOE_GPS_RPMData
+where (ActivityDateTimeEST >='2018/07/31 23:59:59' AND ActivityDateTimeEST <= '2018/08/01 23:59:59')AND EventSubTypeID IN (3,4,15,16,17,59,60,61,62,63,64,69,70,71,72,73,84,94,95,96,106,107,108,109,177,178,179,185,186)")
+
+output <- sqlQuery(dbhandle, query)
+output
+out_csv <- paste0('C:/Users/aschwenker/Desktop/inactive_2018_08_01.csv')
+print(out_csv)
+write.csv(output, out_csv, row.names=FALSE, na='')
+
+library(RODBC)
+library(dplyr)
+dbhandle<- odbcDriverConnect('driver={SQL Server};server=MTSQLPRDW;database=DOEGps_BI;trusted_connection=true')
+sqlTables(dbhandle)
+sqlColumns(dbhandle, "DOE_GPS_RPMData")
+inactive_evnets <- (3,4,7,8,11,12,13,15,16,17,53,54,55,59,60,61,62,63,64,69,70,71,72,73,84,94,95,96,106,107,108,109,110,111,177,178,179,185,186)
+fields <( 'distinct Longitude,Latitude,EventSubTypeID,ActivityDateTimeEST,VehicleID,Registration,UniqueVehicleNumber,vendor,ReceivedDateTimeEST')
+test_query <-("select distinct VehicleID,ActivityDateTimeEST, EventSubTypeID FROM DOE_GPS_RPMData GROUP BY VehicleID,ActivityDateTimeEST, EventSubTypeID HAVING (ActivityDateTimeEST >='2018/10/25 23:59:59' AND ActivityDateTimeEST <= '2018/10/30 23:59:59') AND AND count(case when EventSubTypeID=6 then 1 end else 0 end)<1")
+test_output <- sqlQuery(dbhandle,test_query)
+test_output
+out_csv_jan <- paste0('C:/Users/aschwenker/Desktop/no_6.csv')
+print(out_csv_jan)
+write.csv(test_output, out_csv_jan, row.names=FALSE, na='')
+
+library(RODBC)
+library(dplyr)
+dbhandle<- odbcDriverConnect('driver={SQL Server};server=MTSQLPRDW;database=DOEGps_BI;trusted_connection=true')
+sqlTables(dbhandle)
+sqlColumns(dbhandle, "DOE_GPS_RPMData")
+test_query <-("select distinct * FROM DOE_GPS_RPMData
+              WHERE ActivityDateTimeEST >='2018/10/30 23:59:59' AND ActivityDateTimeEST <= '2018/10/31 23:59:59' AND EventSubTypeID <> 6 ")
+test_output <- sqlQuery(dbhandle,test_query)
+test_output
+out_csv_jan <- paste0('C:/Users/aschwenker/Desktop/no_6_september_october.csv')
+print(out_csv_jan)
+write.csv(test_output, out_csv_jan, row.names=FALSE, na='')
+
+0A791EAA-48BF-45C9-9A23-FE3F690D3379
+
+library(RODBC)
+library(dplyr)
+library(tidyr)
+dbhandle<- odbcDriverConnect('driver={SQL Server};server=MTSQLPRDW;database=DOEGps_BI;trusted_connection=true')
+sqlTables(dbhandle)
+sqlColumns(dbhandle, "DOE_GPS_RPMData")
+DATES_QUERY <-("SELECT distinct ActivityDateTimeEST FROM DOE_GPS_RPMData WHERE ActivityDateTimeEST >='2016/12/31 23:59:59' AND ActivityDateTimeEST <= '2018/08/17 23:59:59'")
+DATES_OUTPUT <- sqlQuery(dbhandle,DATES_QUERY)
+DATES_OUTPUT_NEW<-separate(DATES_OUTPUT,ActivityDateTimeEST,c("Day","Times"), sep = " ")
+DATES_OUTPUT_NEW
+Days<-unique(DATES_OUTPUT_NEW$Day)
+Days

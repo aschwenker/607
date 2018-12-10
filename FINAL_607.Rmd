@@ -1,0 +1,45 @@
+---
+title: "NYC Subway Complaints"
+author: "Anne Schwenker"
+date: "December 8, 2018"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Problem Statement
+
+In 2015 the average subway ridership had risen to its highest since 1948, only to drop by 2% by 2017 according the a NYT article "Subway Ridership Dropped Again in New York as Passengers Flee to Uber" that was released in August. https://nyti.ms/2n4nUMQ 
+
+This drop in ridership is said to be due to poor service and poorly kept stations. Given the MTA has limited time and resources for repairs and improvements I intend to analyze publicly available data to create a combined rank for each of the 472 MTA subway stations in order to provide a list of subways prioritized by both high usage and high complaints and high incidents of 511 ev. 
+---
+#The Data
+There is an abundance of publicly available data regarding ridership, station and entrance locations and customer complaints about subway stations. The sources I explored for this project are:
+File |Area|Data Aquisition Method|Source
+------------- | -------------
+MTA_Customer_Feedback_Data__Beginning_2014 | Complaints | CSV hosted on github and accessed through URL |https://data.ny.gov/
+511 NY MTA Events: Beginning 2010| Service Delays | CSV stored locally |https://data.ny.gov/
+DOITT_SUBWAY_STATION_01_13SEPT2010| Locations | CSV hosted on github and accessed through URL | https://data.ny.gov/
+NYC Transit Subway Entrance And Exit Data| Locations | API | https://data.ny.gov/
+Turnstile_Usage_Data__2017.csv| Usage | CSV stored locally |https://data.ny.gov/
+Subway Ridership Table| Usage | Screen Scraped |http://web.mta.info/nyct/facts/ridership/ridership_sub_annual.htm
+
+Some of these sources were not appropriate for my purpose and were not used in the final analysis. 
+An example of a source that was not ideal was using the turnstile dataset for usage, the turnstile dataset recorded cumulative ridership 4 times a day for every turnstile in the city. While usage could be found from this, it was simplier to access the MTA sourced figures from their website that were available at the station level. 
+---
+#Data Challenges
+
+Different Data Sources had different ways of aggregating the information so it was difficult to create a combined rank. The 511 data and the customer complaints are both collected at the line level while usage is collected at the station level. This makes it difficult to create a combined rank between them
+
+#Complaints Data
+
+
+#
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+
