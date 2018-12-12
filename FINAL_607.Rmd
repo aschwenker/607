@@ -8,6 +8,24 @@ output: ioslides_presentation
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+```{r load_Data,echo=FALSE,warning=FALSE}
+library(tidyverse)
+library(httr)
+library(jsonlite)
+library(tidyr)
+library(plyr)
+library(dplyr)
+library(DATA606)
+library(ggmap)
+library(rvest)
+library(ggplot2)
+library(treemap)
+library(data.table)
+library(RSocrata)
+library(sqldf)
+library(leafletR)
+library(tm)
+```
 
 #Problem Statement
 
@@ -29,14 +47,148 @@ Subway Ridership Table| Usage | Screen Scraped |http://web.mta.info/nyct/facts/r
 Some of these sources were not appropriate for my purpose and were not used in the final analysis. 
 An example of a source that was not ideal was using the turnstile dataset for usage, the turnstile dataset recorded cumulative ridership 4 times a day for every turnstile in the city. While usage could be found from this, it was simplier to access the MTA sourced figures from their website that were available at the station level. 
 ---
-#Data Challenges
-
-Different Data Sources had different ways of aggregating the information so it was difficult to create a combined rank. The 511 data and the customer complaints are both collected at the line level while usage is collected at the station level. This makes it difficult to create a combined rank between them
 
 #Complaints Data
+The Complaints Data is from the NYS open data, sourced from the MTA CRMS (Customer Relationship Management System) from 2014 to 2018. Becuase it was from a CRMS it was relatively clean and required very little clean up. I subsetted it for complaints, with the agency as subway where the line was not blank. Then I created a table from the line column to get counts and then gathered the records to collect counts of incident by subway line as the basis for the rank
 
+```{r customer_complaints, echo=FALSE,warning=FALSE,message=FALSE}
+#Read Customer Complaint Data 
+customer_URL<-"https://raw.githubusercontent.com/aschwenker/607/master/MTA_Customer_Feedback_Data__Beginning_2014.csv"
+customer_feedback <- read.csv(customer_URL,stringsAsFactors=FALSE)
 
+#Subway Complaints Data Manipulation and Subsetting to Top 10
+#Subset to complaints related to subways where line value isn't blank
+subway_customer_feedback<-subset(customer_feedback,Commendation.or.Complaint == "Complaint" & Agency == "Subways" & Branch.Line.Route != 'No Value')
+#Create table of counts and gather
+subway_customer_feedback_line_table<-sort(table(subway_customer_feedback$Branch.Line.Route),decreasing=T)
+line_table_df <-data.frame(rbind(subway_customer_feedback_line_table))
+
+line_table_df_gathered<-line_table_df %>% gather(line,occurence)
+#Remove leading X from numbered lines
+gathered_clean<-c('X')
+line_table_df_gathered$line<-gsub(paste0(gathered_clean,collapse = "|"),"", line_table_df_gathered$line)
+#subset to top 10 by count of complaints related
+line_top_10<-line_table_df_gathered %>% top_n(10)
+#Plot top 10 by count descending order
+p1<-ggplot(data=line_top_10, aes(x=reorder(line, -occurence), y=occurence, fill=line)) +
+  geom_bar(position = 'dodge',stat="identity")+ theme(legend.position="none")+xlab(label="Subway Line")+
+  ylab(label="Count of Related Complaints")+ggtitle("Top Ten Subways By Complaint Count")
+p1
+```
+---
+#511 Data
+511 incident data is accessed from NYS open data portal and sourced from NYSDOT. each record is either an incident, accident, construction project, or special event. I subset this data for MTA Subway and MTA New York City Transit data. This dataset appears to have a lot more manual entry, because the facility_name field required a lot of clean up. Then I created a table from that column to get counts and then gathered the records to collect counts of incident by subway line as the basis for the rank
+```{r 511_incidents, echo=FALSE,warning=FALSE,message=FALSE}
+#511 reports
+#read in 511 data from socrata api
+Data_511<-read.socrata("https://data.ny.gov/resource/gvhy-7eph.csv")
+head(Data_511)
+#list organizations to determine subsetting
+unique(Data_511$organization_name)
+smaller <- subset(Data_511,organization_name == "MTA NYC Transit Subway" | organization_name == "MTA - New York City Transit")
+unique(smaller$facility_name)
+#Clean up names of subway lines
+remove_words<-c("Epress",'Select',' es ','some','Linees','Lines','lines', 'Line','line','Trains','trains', 'Train','train', '  ','Tains', '#', ',','liine','and','&')
+x <-smaller$facility_name        #Company column data
+smaller$facility_name<- removeWords(x,remove_words)     #Remove stopwords
+unique(smaller$facility_name)
+smaller$facility_name<-gsub("&","",smaller$facility_name)
+smaller$facility_name<-gsub("#","",smaller$facility_name)
+smaller$facility_name<-gsub(",","",smaller$facility_name)
+
+smaller<-smaller %>% 
+  mutate(facility_name = strsplit(as.character(facility_name), " ")) %>% 
+  unnest(facility_name)
+head(smaller)
+smaller<-smaller[!(is.na(smaller$facility_name) | smaller$facility_name==""), ]
+
+Data_511_facility_name_table<-sort(table(smaller$facility_name),decreasing = T)
+Data_511_facility_name_table
+Data_511_facility_name_table <-data.frame(rbind(Data_511_facility_name_table))
+Data_511_facility_name_table_gathered<-Data_511_facility_name_table%>% gather(line,occurence)
+gathered_clean<-c('V','X')
+Data_511_facility_name_table_gathered$line<-gsub(paste0(gathered_clean,collapse = "|"),"", Data_511_facility_name_table_gathered$line)
+Data_511_facility_name_table_gathered_top_10<-Data_511_facility_name_table_gathered %>% top_n(10)
+top_10_line_subset<-unique(Data_511_facility_name_table_gathered_top_10$line)
+
+p511<-ggplot(data=Data_511_facility_name_table_gathered_top_10, aes(x=reorder(line, -occurence), y=occurence, fill=line)) +
+  geom_bar(position = 'dodge',stat="identity")+ theme(legend.position="none")+xlab(label="Subway Line")+
+  ylab(label="Count of Related 511 Incidents")+ggtitle("Top Ten Subways By 511 Incident Count")
+p511
+```
+
+---
+#Ridership Data
+Ridership data was screen scraped from the MTA website. This data had figures for every year from 2012 to 2017 as well as ranks and change figures. This data was aggregated at the station level which meant it could not be combine with the customer complaints and 511 incident data
+```{r ridership, echo=FALSE,warning=FALSE, message=FALSE}
+#screen scrape
+ridership_url<-("http://web.mta.info/nyct/facts/ridership/ridership_sub_annual.htm")
+webpage <- read_html(ridership_url)
+ridership <- ridership_url %>%
+  read_html() %>%
+  html_nodes(xpath='//*[@id="subway"]') %>%
+  html_table()
+ridership<-ridership[1]
+ridership <- data.frame(ridership)
+ridership_subset<-c("Station..alphabetical.by.borough.","X2017.Rank")
+ridership<-ridership[ridership_subset]
+ridership<-ridership[!(is.na(ridership$X2017.Rank) | ridership$X2017.Rank==""), ]
+ridership$X2017.Rank<-as.numeric(ridership$X2017.Rank)
+ridership_sorted<-ridership[order(ridership$X2017.Rank),]
+head(ridership_sorted)
+```
+
+---
+#Complaint and Incident subject Matter
+For both MTA customer complaints and 511 incident data I looked also at the explanation for the complaint or incident to see what the top causes were
+```{r customer_complaints_plots, echo=FALSE,warning=FALSE,message=FALSE, error=FALSE}
+#Revieiwing Top Complaint content
+top_10_line_subset_customer<-unique(line_top_10$line)
+
+customer_top_10<-subset(subway_customer_feedback,Branch.Line.Route %in% top_10_line_subset_customer & Subject.Detail != "No Value")
+
+subway_customer_feedback_matter_table<-sort(table(customer_top_10$Subject.Matter),decreasing = T)
+subway_customer_feedback_matter_table_df <-data.frame(rbind(subway_customer_feedback_matter_table))
+subway_customer_feedback_matter_table_df_gathered<-subway_customer_feedback_matter_table_df%>% gather(subject_matter,occurence)
+subway_customer_feedback_matter_table_df_gathered_top_10<-subway_customer_feedback_matter_table_df_gathered %>% top_n(10)
+#Plot top ten events happening on top ten highest incident lines
+pcustomer_subject_matter<-ggplot(data=subway_customer_feedback_matter_table_df_gathered_top_10, aes(x=reorder(subject_matter, -occurence), y=occurence, fill=subject_matter)) +
+  geom_bar(position = 'dodge',stat="identity")+xlab(label="Subject Matter")+theme(legend.position="none")+
+  ylab(label="Count of Related MTA Customer Complaints")+ggtitle("Top Ten MTA Customer Complaint Subject Matters Occuring on Top 10 highest incident subway lines By MTA Customer Complaint Count")+ coord_flip()
+pcustomer_subject_matter
+
+#Top events on these lines
+smaller_top_10_event_type_table<-sort(table(smaller_top_10$event_type),decreasing = T)
+smaller_top_10_event_type_table_df <-data.frame(rbind(smaller_top_10_event_type_table))
+smaller_top_10_event_type_table_df_gathered<-smaller_top_10_event_type_table_df%>% gather(event_type,occurence)
+smaller_top_10_events_top_10<-smaller_top_10_event_type_table_df_gathered %>% top_n(10)
+#Plot top ten events happening on top ten highest incident lines
+p511_events<-ggplot(data=smaller_top_10_events_top_10, aes(x=reorder(event_type, -occurence), y=occurence, fill=event_type)) +
+  geom_bar(position = 'dodge',stat="identity")+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+xlab(label="Event")+
+  ylab(label="Count of Related 511 Incidents")+ggtitle("Top Ten 511 Events Occuring on Top 10 highest incident subway lines By 511 Incident Count")
+p511_events
+
+```
+---
+#Data Challenges
+
+Different Data Sources had different ways of aggregating the information so it was difficult to create a combined rank. The 511 data and the customer complaints are both collected at the line level while usage is collected at the station level. Becuase of this I ended up ranking lines by 511 incidents and customer complaints and did not use ridership at all. 
+---
 #
+```{r RANK, echo=FALSE}
+#RANK
+#restrict to top 10
+customer_line_ranked<-rank(subway_customer_feedback_table[1:10],ties.method= "first")
+customer_line_ranked_df <-data.frame(rbind(customer_line_ranked))
+customer_line_ranked_df_gathered<-customer_line_ranked_df %>% gather(line,occurence)
+#Remove leading X from numbered lines
+gathered_clean<-c('X')
+customer_line_ranked_df_gathered$line<-gsub(paste0(gathered_clean,collapse = "|"),"", customer_line_ranked_df_gathered$line)
+customer_line_ranked_df_gathered
+```
 
 ```{r pressure, echo=FALSE}
 plot(pressure)
