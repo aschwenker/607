@@ -1,0 +1,30 @@
+---
+title: "Assignment 9"
+author: "Anne Schwenker"
+date: "December 21, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+```{r echo=FALSE}
+library(httr)
+
+library(jsonlite)
+
+NYT_API_KEY<- "f91bbd2376704d60b5aa21c4c254c2d4"
+Sys.setenv(NYTIMES_AS_KEY = NYT_API_KEY)
+
+url <-"http://api.nytimes.com/svc/news/v3/content/all/all.json?api-key=f91bbd2376704d60b5aa21c4c254c2d4"
+
+ArticleJSON<-fromJSON(url)
+Article_DF <- data.frame(ArticleJSON)
+head(Article_DF)
+colnames(Article_DF)
+head(Article_DF)
+```
+
